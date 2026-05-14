@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Sillage" />
+<meta name="theme-color" content="#14110d" />
+<title>Sillage — A Perfume Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f0e8d8;           /* warm off-white text */
+    --ink-soft: #9a8f7e;      /* muted text */
+    --paper: #14110d;         /* near-black background */
+    --paper-warm: #221c15;    /* slightly lifted surface */
+    --gold: #c9a168;          /* brighter gold for dark bg */
+    --gold-deep: #d4b07a;     /* lighter for accents on dark */
+    --rose: #d68a7e;          /* softer rose for dark */
+    --sage: #8a9874;
+    --line: rgba(240, 232, 216, 0.12);
+    --line-strong: rgba(240, 232, 216, 0.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--ink); font-family: 'Fraunces', Georgia, serif; min-height: 100vh; }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(201, 161, 104, 0.12), transparent 50%),
+      radial-gradient(circle at 85% 90%, rgba(214, 138, 126, 0.08), transparent 45%);
+    background-attachment: fixed;
+  }
+
+  /* grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.9 0 0 0 0 0.8 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: calc(48px + env(safe-area-inset-top)) calc(40px + env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) calc(40px + env(safe-area-inset-left));
+    position: relative;
+    z-index: 2;
+  }
+
+  /* MASTHEAD */
+  header.masthead {
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 28px;
+    margin-bottom: 44px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: end;
+    gap: 32px;
+  }
+  .issue { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    text-align: center;
+  }
+  .logo span { font-style: normal; font-weight: 300; }
+  .logo-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    text-align: center;
+  }
+  .add-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 14px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .add-btn:hover { background: var(--gold-deep); transform: translateY(-2px); }
+  .add-btn .plus { font-size: 16px; line-height: 1; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .tab {
+    background: none; border: none; cursor: pointer;
+    padding: 18px 4px;
+    margin-right: 36px;
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    position: relative;
+    transition: color 0.25s;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); }
+  .tab.active::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: var(--ink);
+  }
+  .tab .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    background: var(--paper-warm);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+  .search {
+    flex: 1;
+    min-width: 240px;
+    padding: 12px 16px;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search:focus { border-color: var(--ink); }
+  .search::placeholder { color: var(--ink-soft); font-style: italic; }
+  .sort {
+    padding: 12px 16px;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  /* SECTION HEADERS for wishlist priority groups */
+  .priority-header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 16px;
+    margin-top: 12px;
+    padding-bottom: 8px;
+  }
+  .priority-header:first-child { margin-top: 0; }
+  .priority-header h3 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 22px;
+  }
+  .priority-header .line { flex: 1; height: 1px; background: var(--line); }
+  .priority-header .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 0;
+    display: flex; flex-direction: column;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--line-strong);
+    box-shadow: 0 18px 40px -20px rgba(26, 20, 16, 0.25);
+  }
+  .card-img {
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(135deg, #2a221a, #1a1410);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-img-placeholder {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 56px;
+    color: var(--gold);
+    opacity: 0.5;
+  }
+  .card-priority {
+    position: absolute; top: 12px; right: 12px;
+    background: var(--gold);
+    color: var(--paper);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .card-body { padding: 20px 22px 24px; }
+  .card-brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .card-name {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    line-height: 1.15;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+  }
+  .card-name em { font-style: italic; font-weight: 300; color: var(--gold-deep); }
+  .card-meta {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .card-rating { color: var(--gold-deep); font-weight: 500; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 4px 8px;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 100px 20px;
+    color: var(--ink-soft);
+  }
+  .empty h2 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 36px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  .empty p { font-size: 16px; max-width: 420px; margin: 0 auto; line-height: 1.6; }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(26, 20, 16, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 40px 20px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--paper);
+    max-width: 720px;
+    width: 100%;
+    padding: 48px 52px;
+    border: 1px solid var(--line-strong);
+    position: relative;
+    animation: slideUp 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .modal-close {
+    position: absolute; top: 20px; right: 20px;
+    background: none; border: none; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+    padding: 8px;
+  }
+  .modal-close:hover { color: var(--ink); }
+
+  .modal-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: 12px;
+  }
+  .modal h2 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 42px;
+    line-height: 1.05;
+    margin-bottom: 28px;
+    letter-spacing: -0.02em;
+  }
+
+  .field { margin-bottom: 22px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--ink); }
+  textarea { resize: vertical; min-height: 70px; font-family: 'Fraunces', serif; }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 32px 0 24px;
+    position: relative;
+  }
+  .section-divider span {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    background: var(--paper);
+    padding: 0 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .rating-group { display: flex; gap: 6px; }
+  .star-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 24px;
+    color: var(--line-strong);
+    padding: 0; line-height: 1;
+    transition: color 0.15s, transform 0.15s;
+  }
+  .star-btn:hover { transform: scale(1.15); }
+  .star-btn.filled { color: var(--gold); }
+
+  .priority-row { display: flex; gap: 8px; }
+  .priority-btn {
+    flex: 1;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    padding: 10px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-soft);
+    transition: all 0.2s;
+  }
+  .priority-btn:hover { color: var(--ink); }
+  .priority-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .url-help {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .img-preview {
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 10px;
+  }
+  .img-preview img {
+    width: 70px; height: 70px; object-fit: cover;
+    border: 1px solid var(--line-strong);
+  }
+  .img-upload-btn {
+    padding: 10px 16px;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+  }
+  .img-upload-btn:hover { background: var(--paper-warm); }
+
+  .modal-actions {
+    display: flex; gap: 12px; justify-content: space-between;
+    margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--line);
+  }
+  .btn {
+    padding: 13px 26px;
+    border: none;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: all 0.25s;
+  }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: var(--gold-deep); }
+  .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+  .btn-secondary:hover { border-color: var(--ink); }
+  .btn-danger { background: transparent; color: var(--rose); border: 1px solid var(--rose); }
+  .btn-danger:hover { background: var(--rose); color: var(--paper); }
+
+  /* DETAIL VIEW */
+  .detail-eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .detail-brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+  .detail-status-pill {
+    padding: 3px 10px;
+    background: var(--paper-warm);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .detail h2 { margin-bottom: 20px; }
+  .detail-img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, #2a221a, #1a1410);
+    margin-bottom: 28px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .detail-img img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 32px;
+    margin-bottom: 24px;
+  }
+  .detail-stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .detail-stat .value {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 400;
+  }
+  .detail-stat .value em { color: var(--gold-deep); font-style: italic; }
+  .detail-section { margin-bottom: 24px; }
+  .detail-section h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .detail-section p {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .note-pyramid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .note-tier { padding: 14px 16px; background: var(--paper-warm); border-left: 3px solid var(--gold); }
+  .note-tier .tier-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: 4px;
+  }
+  .note-tier .tier-notes {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+  }
+  .detail-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 2px;
+  }
+  .detail-link:hover { color: var(--ink); }
+
+  /* loading state */
+  .loading {
+    text-align: center;
+    padding: 80px 20px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 28px 20px 60px; }
+    header.masthead {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 16px;
+    }
+    .logo { font-size: 56px; }
+    .modal { padding: 36px 24px; }
+    .modal h2 { font-size: 32px; }
+    .field-row, .field-row-3 { grid-template-columns: 1fr; gap: 16px; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="issue">Vol. I · Est. 2026</div>
+    <div>
+      <div class="logo"><span>S</span>illage</div>
+      <div class="logo-sub">A Private Perfume Journal</div>
+    </div>
+    <button class="add-btn" onclick="openModal()">
+      <span class="plus">+</span>
+      <span>New Entry</span>
+    </button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="collection">
+      <span>Collection</span>
+      <span class="count" id="count-collection">0</span>
+    </button>
+    <button class="tab" data-tab="wishlist">
+      <span>Wishlist</span>
+      <span class="count" id="count-wishlist">0</span>
+    </button>
+    <button class="tab" data-tab="totry">
+      <span>To Try</span>
+      <span class="count" id="count-totry">0</span>
+    </button>
+  </nav>
+
+  <div class="controls">
+    <input type="text" class="search" id="search" placeholder="Search by name, house, or note..." />
+    <select class="sort" id="sort">
+      <option value="recent">Recently Added</option>
+      <option value="name">Name (A–Z)</option>
+      <option value="brand">House (A–Z)</option>
+      <option value="rating">Rating (High to Low)</option>
+    </select>
+  </div>
+
+  <div id="content">
+    <div class="loading">Loading your journal...</div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-add')">✕ CLOSE</button>
+    <div class="modal-eyebrow" id="modal-eyebrow">New Entry</div>
+    <h2 id="modal-title">Add a Perfume</h2>
+
+    <div class="field">
+      <label>Status</label>
+      <div class="priority-row">
+        <button type="button" class="priority-btn" data-status="collection" onclick="setStatus('collection')">In Collection</button>
+        <button type="button" class="priority-btn" data-status="wishlist" onclick="setStatus('wishlist')">Wishlist</button>
+        <button type="button" class="priority-btn" data-status="totry" onclick="setStatus('totry')">Want to Try</button>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div>
+        <label>Perfume Name</label>
+        <input type="text" id="f-name" placeholder="Aventus" />
+      </div>
+      <div>
+        <label>House / Brand</label>
+        <input type="text" id="f-brand" placeholder="Creed" />
+      </div>
+    </div>
+
+    <div class="field-row-3">
+      <div>
+        <label>Perfumer</label>
+        <input type="text" id="f-perfumer" placeholder="Olivier Creed" />
+      </div>
+      <div>
+        <label>Year</label>
+        <input type="number" id="f-year" placeholder="2010" />
+      </div>
+      <div>
+        <label>Concentration</label>
+        <select id="f-concentration">
+          <option value="">—</option>
+          <option>Parfum</option>
+          <option>EDP</option>
+          <option>EDT</option>
+          <option>EDC</option>
+          <option>Cologne</option>
+          <option>Extrait</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Fragrantica URL</label>
+      <input type="url" id="f-url" placeholder="https://www.fragrantica.com/..." />
+      <div class="url-help">Save the link so you can jump back to the full Fragrantica page anytime.</div>
+    </div>
+
+    <div class="field">
+      <label>Bottle Photo</label>
+      <input type="file" id="f-image" accept="image/*" style="display:none" onchange="handleImageUpload(event)" />
+      <div class="img-preview">
+        <img id="img-preview-el" src="" alt="" style="display:none" />
+        <button type="button" class="img-upload-btn" onclick="document.getElementById('f-image').click()">Choose Image</button>
+        <button type="button" class="img-upload-btn" id="remove-img-btn" onclick="removeImage()" style="display:none">Remove</button>
+      </div>
+    </div>
+
+    <hr class="section-divider"><span>From Fragrantica</span></hr>
+
+    <div class="field">
+      <label>Main Accords (comma separated)</label>
+      <input type="text" id="f-accords" placeholder="fruity, smoky, woody, citrus" />
+    </div>
+
+    <div class="field">
+      <label>Top Notes</label>
+      <input type="text" id="f-top" placeholder="Bergamot, Black Currant, Apple" />
+    </div>
+    <div class="field">
+      <label>Heart Notes</label>
+      <input type="text" id="f-heart" placeholder="Rose, Dry Birch, Jasmine" />
+    </div>
+    <div class="field">
+      <label>Base Notes</label>
+      <input type="text" id="f-base" placeholder="Musk, Oak Moss, Ambergris" />
+    </div>
+
+    <div class="field-row">
+      <div>
+        <label>Longevity (1–5)</label>
+        <div class="rating-group" id="rating-longevity"></div>
+      </div>
+      <div>
+        <label>Sillage (1–5)</label>
+        <div class="rating-group" id="rating-sillage"></div>
+      </div>
+    </div>
+
+    <hr class="section-divider"><span>Personal</span></hr>
+
+    <div class="field">
+      <label>My Rating (1–5)</label>
+      <div class="rating-group" id="rating-personal"></div>
+    </div>
+
+    <div class="field">
+      <label>Tags — Season / Occasion / Mood</label>
+      <input type="text" id="f-tags" placeholder="autumn, evening, romantic, signature" />
+    </div>
+
+    <div class="field" id="priority-field" style="display:none">
+      <label>Wishlist Priority</label>
+      <div class="priority-row">
+        <button type="button" class="priority-btn" data-priority="1" onclick="setPriority(1)">1 · Top</button>
+        <button type="button" class="priority-btn" data-priority="2" onclick="setPriority(2)">2 · High</button>
+        <button type="button" class="priority-btn" data-priority="3" onclick="setPriority(3)">3 · Medium</button>
+        <button type="button" class="priority-btn" data-priority="4" onclick="setPriority(4)">4 · Someday</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notes / Memory</label>
+      <textarea id="f-notes" placeholder="Where I first smelled it, who wore it, how it reminded me of..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="delete-btn" onclick="deleteCurrent()" style="display:none">Delete</button>
+      <div style="display:flex; gap:12px; margin-left:auto">
+        <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
+        <button class="btn btn-primary" onclick="savePerfume()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-bg" id="modal-detail">
+  <div class="modal detail" id="detail-content">
+    <button class="modal-close" onclick="closeModal('modal-detail')">✕ CLOSE</button>
+  </div>
+</div>
+
+<script>
+// ============ STATE ============
+let perfumes = [];
+let currentTab = 'collection';
+let editingId = null;
+let formState = { status: 'collection', priority: null, longevity: 0, sillage: 0, personal: 0, image: null };
+
+// ============ STORAGE ============
+async function loadPerfumes() {
+  try {
+    const list = await window.storage.list('perfume:');
+    if (list && list.keys && list.keys.length > 0) {
+      const loaded = [];
+      for (const key of list.keys) {
+        try {
+          const result = await window.storage.get(key);
+          if (result && result.value) loaded.push(JSON.parse(result.value));
+        } catch (e) { /* skip */ }
+      }
+      perfumes = loaded;
+    }
+  } catch (e) {
+    console.error('load error', e);
+  }
+  render();
+}
+
+async function savePerfumeToStorage(p) {
+  try {
+    await window.storage.set(`perfume:${p.id}`, JSON.stringify(p));
+  } catch (e) { console.error('save error', e); }
+}
+
+async function deletePerfumeFromStorage(id) {
+  try { await window.storage.delete(`perfume:${id}`); }
+  catch (e) { console.error('delete error', e); }
+}
+
+// ============ UI HELPERS ============
+function buildStars(containerId, key) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'star-btn';
+    b.textContent = '★';
+    b.onclick = () => {
+      formState[key] = formState[key] === i ? 0 : i;
+      buildStars(containerId, key);
+    };
+    if (i <= formState[key]) b.classList.add('filled');
+    c.appendChild(b);
+  }
+}
+
+function setStatus(s) {
+  formState.status = s;
+  document.querySelectorAll('[data-status]').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === s);
+  });
+  document.getElementById('priority-field').style.display = s === 'wishlist' ? 'block' : 'none';
+}
+
+function setPriority(p) {
+  formState.priority = formState.priority === p ? null : p;
+  document.querySelectorAll('[data-priority]').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.priority) === formState.priority);
+  });
+}
+
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    formState.image = ev.target.result;
+    const img = document.getElementById('img-preview-el');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    document.getElementById('remove-img-btn').style.display = 'inline-block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  formState.image = null;
+  document.getElementById('img-preview-el').style.display = 'none';
+  document.getElementById('img-preview-el').src = '';
+  document.getElementById('remove-img-btn').style.display = 'none';
+  document.getElementById('f-image').value = '';
+}
+
+function openModal(id = null) {
+  editingId = id;
+  resetForm();
+  if (id) {
+    const p = perfumes.find(x => x.id === id);
+    if (p) populateForm(p);
+    document.getElementById('modal-title').textContent = 'Edit Entry';
+    document.getElementById('modal-eyebrow').textContent = 'Editing';
+    document.getElementById('delete-btn').style.display = 'inline-block';
+  } else {
+    document.getElementById('modal-title').textContent = 'Add a Perfume';
+    document.getElementById('modal-eyebrow').textContent = 'New Entry';
+    document.getElementById('delete-btn').style.display = 'none';
+    setStatus(currentTab);
+  }
+  document.getElementById('modal-add').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function resetForm() {
+  formState = { status: 'collection', priority: null, longevity: 0, sillage: 0, personal: 0, image: null };
+  ['f-name','f-brand','f-perfumer','f-year','f-url','f-accords','f-top','f-heart','f-base','f-tags','f-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-concentration').value = '';
+  removeImage();
+  buildStars('rating-longevity', 'longevity');
+  buildStars('rating-sillage', 'sillage');
+  buildStars('rating-personal', 'personal');
+  setStatus('collection');
+  setPriority(null);
+}
+
+function populateForm(p) {
+  formState.status = p.status;
+  formState.priority = p.priority || null;
+  formState.longevity = p.longevity || 0;
+  formState.sillage = p.sillage || 0;
+  formState.personal = p.personal || 0;
+  formState.image = p.image || null;
+
+  document.getElementById('f-name').value = p.name || '';
+  document.getElementById('f-brand').value = p.brand || '';
+  document.getElementById('f-perfumer').value = p.perfumer || '';
+  document.getElementById('f-year').value = p.year || '';
+  document.getElementById('f-concentration').value = p.concentration || '';
+  document.getElementById('f-url').value = p.url || '';
+  document.getElementById('f-accords').value = p.accords || '';
+  document.getElementById('f-top').value = p.topNotes || '';
+  document.getElementById('f-heart').value = p.heartNotes || '';
+  document.getElementById('f-base').value = p.baseNotes || '';
+  document.getElementById('f-tags').value = p.tags || '';
+  document.getElementById('f-notes').value = p.notes || '';
+
+  if (p.image) {
+    const img = document.getElementById('img-preview-el');
+    img.src = p.image; img.style.display = 'block';
+    document.getElementById('remove-img-btn').style.display = 'inline-block';
+  }
+
+  buildStars('rating-longevity', 'longevity');
+  buildStars('rating-sillage', 'sillage');
+  buildStars('rating-personal', 'personal');
+  setStatus(p.status);
+  if (p.priority) setPriority(p.priority);
+}
+
+async function savePerfume() {
+  const name = document.getElementById('f-name').value.trim();
+  const brand = document.getElementById('f-brand').value.trim();
+  if (!name || !brand) {
+    alert('Please add at least a name and a house.');
+    return;
+  }
+  const p = {
+    id: editingId || `p_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+    name, brand,
+    perfumer: document.getElementById('f-perfumer').value.trim(),
+    year: document.getElementById('f-year').value.trim(),
+    concentration: document.getElementById('f-concentration').value,
+    url: document.getElementById('f-url').value.trim(),
+    accords: document.getElementById('f-accords').value.trim(),
+    topNotes: document.getElementById('f-top').value.trim(),
+    heartNotes: document.getElementById('f-heart').value.trim(),
+    baseNotes: document.getElementById('f-base').value.trim(),
+    tags: document.getElementById('f-tags').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    status: formState.status,
+    priority: formState.priority,
+    longevity: formState.longevity,
+    sillage: formState.sillage,
+    personal: formState.personal,
+    image: formState.image,
+    addedAt: editingId ? perfumes.find(x => x.id === editingId).addedAt : Date.now()
+  };
+
+  if (editingId) {
+    perfumes = perfumes.map(x => x.id === editingId ? p : x);
+  } else {
+    perfumes.push(p);
+  }
+  await savePerfumeToStorage(p);
+  closeModal('modal-add');
+  render();
+}
+
+async function deleteCurrent() {
+  if (!editingId) return;
+  if (!confirm('Delete this entry permanently?')) return;
+  await deletePerfumeFromStorage(editingId);
+  perfumes = perfumes.filter(x => x.id !== editingId);
+  closeModal('modal-add');
+  render();
+}
+
+// ============ RENDER ============
+function render() {
+  // counts
+  document.getElementById('count-collection').textContent = perfumes.filter(p => p.status === 'collection').length;
+  document.getElementById('count-wishlist').textContent = perfumes.filter(p => p.status === 'wishlist').length;
+  document.getElementById('count-totry').textContent = perfumes.filter(p => p.status === 'totry').length;
+
+  let list = perfumes.filter(p => p.status === currentTab);
+
+  // search
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  if (q) {
+    list = list.filter(p =>
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.brand || '').toLowerCase().includes(q) ||
+      (p.topNotes + ' ' + p.heartNotes + ' ' + p.baseNotes + ' ' + p.accords + ' ' + p.tags).toLowerCase().includes(q)
+    );
+  }
+
+  // sort
+  const sort = document.getElementById('sort').value;
+  if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === 'brand') list.sort((a, b) => a.brand.localeCompare(b.brand));
+  else if (sort === 'rating') list.sort((a, b) => (b.personal || 0) - (a.personal || 0));
+  else list.sort((a, b) => b.addedAt - a.addedAt);
+
+  const content = document.getElementById('content');
+
+  if (list.length === 0) {
+    const empties = {
+      collection: { h: 'Your shelf, untouched.', p: 'Add the perfumes you already own to begin your journal.' },
+      wishlist: { h: 'Nothing on the wishlist yet.', p: 'Save the bottles you dream of owning. Set a priority so you know which to chase first.' },
+      totry: { h: 'No curiosities yet.', p: 'Heard a friend rave about something? Saw a beautiful name on Fragrantica? Add it here and visit a counter.' }
+    };
+    const e = empties[currentTab];
+    content.innerHTML = `<div class="empty"><h2>${e.h}</h2><p>${e.p}</p></div>`;
+    return;
+  }
+
+  // wishlist: group by priority
+  if (currentTab === 'wishlist') {
+    const groups = { 1: [], 2: [], 3: [], 4: [], 0: [] };
+    list.forEach(p => groups[p.priority || 0].push(p));
+    const labels = { 1: 'Top Priority', 2: 'High Priority', 3: 'Medium Priority', 4: 'Someday', 0: 'Unsorted' };
+    let html = '<div class="grid">';
+    for (const key of [1, 2, 3, 4, 0]) {
+      if (groups[key].length === 0) continue;
+      html += `<div class="priority-header"><h3>${labels[key]}</h3><div class="line"></div><div class="num">${String(groups[key].length).padStart(2,'0')}</div></div>`;
+      html += groups[key].map(renderCard).join('');
+    }
+    html += '</div>';
+    content.innerHTML = html;
+  } else {
+    content.innerHTML = `<div class="grid">${list.map(renderCard).join('')}</div>`;
+  }
+}
+
+function renderCard(p) {
+  const tags = (p.tags || '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 4);
+  const accords = (p.accords || '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 3);
+  const displayTags = tags.length > 0 ? tags : accords;
+  const stars = '★'.repeat(p.personal || 0) + '☆'.repeat(5 - (p.personal || 0));
+  const initial = (p.name || '?').charAt(0).toUpperCase();
+  return `
+    <div class="card" onclick="showDetail('${p.id}')">
+      <div class="card-img">
+        ${p.image ? `<img src="${escapeAttr(p.image)}" alt="">` : `<div class="card-img-placeholder">${escapeHtml(initial)}</div>`}
+        ${p.status === 'wishlist' && p.priority ? `<div class="card-priority">${p.priority}</div>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-brand">${escapeHtml(p.brand)}</div>
+        <div class="card-name">${escapeHtml(p.name)}</div>
+        <div class="card-meta">
+          ${p.concentration ? `<span>${escapeHtml(p.concentration)}</span>` : ''}
+          ${p.personal ? `<span class="card-rating">${stars}</span>` : ''}
+        </div>
+        ${displayTags.length ? `<div class="card-tags">${displayTags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function showDetail(id) {
+  const p = perfumes.find(x => x.id === id);
+  if (!p) return;
+  const statusLabel = { collection: 'In Collection', wishlist: 'Wishlist', totry: 'Want to Try' }[p.status];
+  const renderStars = n => n ? ('★'.repeat(n) + '☆'.repeat(5 - n)) : '—';
+  const initial = (p.name || '?').charAt(0).toUpperCase();
+
+  const html = `
+    <button class="modal-close" onclick="closeModal('modal-detail')">✕ CLOSE</button>
+    <div class="detail-eyebrow">
+      <span class="detail-brand">${escapeHtml(p.brand)}</span>
+      <span class="detail-status-pill">${statusLabel}</span>
+      ${p.priority ? `<span class="detail-status-pill">Priority ${p.priority}</span>` : ''}
+    </div>
+    <h2><em>${escapeHtml(p.name)}</em></h2>
+    <div class="detail-img">
+      ${p.image ? `<img src="${escapeAttr(p.image)}" alt="">` : `<div class="card-img-placeholder">${escapeHtml(initial)}</div>`}
+    </div>
+
+    <div class="detail-grid">
+      ${p.perfumer ? `<div class="detail-stat"><div class="label">Perfumer</div><div class="value"><em>${escapeHtml(p.perfumer)}</em></div></div>` : ''}
+      ${p.year ? `<div class="detail-stat"><div class="label">Year</div><div class="value">${escapeHtml(p.year)}</div></div>` : ''}
+      ${p.concentration ? `<div class="detail-stat"><div class="label">Concentration</div><div class="value">${escapeHtml(p.concentration)}</div></div>` : ''}
+      <div class="detail-stat"><div class="label">My Rating</div><div class="value" style="color:var(--gold-deep)">${renderStars(p.personal)}</div></div>
+      <div class="detail-stat"><div class="label">Longevity</div><div class="value" style="color:var(--gold-deep)">${renderStars(p.longevity)}</div></div>
+      <div class="detail-stat"><div class="label">Sillage</div><div class="value" style="color:var(--gold-deep)">${renderStars(p.sillage)}</div></div>
+    </div>
+
+    ${p.accords ? `
+      <div class="detail-section">
+        <h4>Main Accords</h4>
+        <div class="card-tags">${p.accords.split(',').map(t => t.trim()).filter(Boolean).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+      </div>
+    ` : ''}
+
+    ${(p.topNotes || p.heartNotes || p.baseNotes) ? `
+      <div class="detail-section">
+        <h4>Note Pyramid</h4>
+        <div class="note-pyramid">
+          ${p.topNotes ? `<div class="note-tier"><div class="tier-label">Top</div><div class="tier-notes">${escapeHtml(p.topNotes)}</div></div>` : ''}
+          ${p.heartNotes ? `<div class="note-tier"><div class="tier-label">Heart</div><div class="tier-notes">${escapeHtml(p.heartNotes)}</div></div>` : ''}
+          ${p.baseNotes ? `<div class="note-tier"><div class="tier-label">Base</div><div class="tier-notes">${escapeHtml(p.baseNotes)}</div></div>` : ''}
+        </div>
+      </div>
+    ` : ''}
+
+    ${p.tags ? `
+      <div class="detail-section">
+        <h4>Tags</h4>
+        <div class="card-tags">${p.tags.split(',').map(t => t.trim()).filter(Boolean).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+      </div>
+    ` : ''}
+
+    ${p.notes ? `
+      <div class="detail-section">
+        <h4>My Notes</h4>
+        <p style="font-style:italic">${escapeHtml(p.notes)}</p>
+      </div>
+    ` : ''}
+
+    ${p.url ? `<a class="detail-link" href="${escapeAttr(p.url)}" target="_blank" rel="noopener">View on Fragrantica ↗</a>` : ''}
+
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="closeModal('modal-detail'); openModal('${p.id}')">Edit Entry</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-detail')" style="margin-left:auto">Close</button>
+    </div>
+  `;
+  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('modal-detail').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+// ============ EVENTS ============
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    render();
+  };
+});
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('sort').addEventListener('change', render);
+
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.open').forEach(m => closeModal(m.id));
+  }
+});
+
+// init
+buildStars('rating-longevity', 'longevity');
+buildStars('rating-sillage', 'sillage');
+buildStars('rating-personal', 'personal');
+loadPerfumes();
+</script>
+</body>
+</html>
